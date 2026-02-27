@@ -11,11 +11,12 @@ const db = new sqlite3.Database(dbPath, (err) => {
 
         db.run(`CREATE TABLE IF NOT EXISTS expenses (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
             category TEXT NOT NULL,
             amount REAL NOT NULL,
             date TEXT NOT NULL
         )`, (err) => {
-            if (err) console.error('Błąd przy tworzeniu tabeli:', err.message);
+            if (err) console.error('Error creating table:', err.message);
         });
     }
 })

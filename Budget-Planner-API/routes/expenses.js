@@ -32,9 +32,9 @@ router.get('/:id', function(req, res)  {
 });
 
 router.post('/', validateExpense, function(req, res) {
-    const { category, amount, date } = req.body;
-    const sql = `INSERT INTO expenses(category, amount, date) VALUES(?, ?, ?)`;
-    const params = [category, amount, date];
+    const { name, category, amount, date } = req.body;
+    const sql = `INSERT INTO expenses(name, category, amount, date) VALUES(?, ?, ?, ?)`;
+    const params = [name, category, amount, date];
 
     db.run(sql, params, function(err) {
         if(err) {
@@ -43,6 +43,7 @@ router.post('/', validateExpense, function(req, res) {
 
         const newExpense = {
             id: this.lastID,
+            name,
             category,
             amount,
             date
@@ -57,11 +58,11 @@ router.post('/', validateExpense, function(req, res) {
 
 router.put('/:id', validateExpense, function(req, res) {
     const id = parseInt(req.params.id);
-    const { category, amount, date } = req.body;
+    const { name, category, amount, date } = req.body;
     const sql = `UPDATE expenses
-                 SET category = ?, amount = ?, date = ?
+                 SET name = ?, category = ?, amount = ?, date = ?
                  WHERE id = ?`;
-    const params = [category, amount, date, id];
+    const params = [name, category, amount, date, id];
 
     db.run(sql, params, function(err) {
         if (err) {
@@ -76,7 +77,7 @@ router.put('/:id', validateExpense, function(req, res) {
 
         res.json({
             message: "The expense has been updated!",
-            data: { id, category, amount, date }
+            data: { id, name, category, amount, date }
         });
     });
 });

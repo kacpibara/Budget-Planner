@@ -1,6 +1,9 @@
 const validateExpense = function(req, res, next) {
-    const { category, amount, date } = req.body;
+    const { name, category, amount, date } = req.body;
 
+    if(!name || typeof name !== 'string' || name.trim() === '') {
+        return res.status(400).json({ error: "Name is required." });
+    }
     if(!category || typeof category !== 'string' || category.trim() === '') {
         return res.status(400).json({ error: "Category is required." });
     }

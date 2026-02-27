@@ -1,4 +1,5 @@
 const express = require('express');
+const cors = require('cors');
 
 // midlewares import
 const myErrorHandler = require('./middlewares/errorHandler');
@@ -12,6 +13,7 @@ const app = express();
 const PORT = 3000;
 
 app.use(myRequestLogger);
+app.use(cors());
 app.use(express.json());
 
 app.use('/', indexRoutes);
