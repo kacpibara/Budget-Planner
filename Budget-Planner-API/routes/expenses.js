@@ -1,78 +1,119 @@
 const express = require('express');
-const validateExpense = require('../middlewares/validateExpense.js');
 const router = express.Router();
-
-const expenses = [
-    {id: 1, category: 'eat', amount: 50, date: '2026-02-25'},
-    {id: 2, category: 'fun', amount: 100, date: '2026-02-25'},
-];
-
+const validateExpense = require('../middlewares/validateExpense.js');
+const db = require('../db/database.js');
 
 router.get('/', function(req, res) {
-    res.json(expenses);
+    const sql = "SELECT * FROM expenses";
+    db.all(sql, [], (err, rows) => {
+        if (err) {
+            return next(err);
+        }
+        res.json(rows);
+    });
 })
 
-router.get('/:id', function(req, res) {
-    const id = parseInt(req.params.id);
-    const expense = expenses.find(e => e.id === id);
+router.get('/:id', function(req, res)  {
+    const id = req.params.id;
+    const sql = "SELECT * FROM expenses WHERE id = ?";
 
-    if(!expense) {
-        return res.status(404).json({ error: "Expense with that ID - not found!"})
-    }
+    db.get(sql, [id], function(err, row) {
+        if (err) {
+            return next(err);
+        }
 
-    res.json(expense);
-})
+        if (!row) {
+            return res.status(404).json({ 
+                error: "Expense not found!" 
+            });
+        }
+        res.json(row);
+    });
+});
 
 router.post('/', validateExpense, function(req, res) {
     const { category, amount, date } = req.body;
+    const sql = `INSERT INTO expenses(category, amount, date) VALUES(?, ?, ?)`;
+    const params = [category, amount, date];
 
-    const newExpense = {
-        id: expenses.length + 1,
-        category,
-        amount,
-        date
-    }
+    db.run(sql, params, function(err) {
+        if(err) {
+            return next(err);
+        }
 
-    expenses.push(newExpense);
-    res.status(201).json(newExpense);
-})
+        const newExpense = {
+            id: this.lastID,
+            category,
+            amount,
+            date
+        };
+
+        res.status(201).json({
+            message: "Expense added successfully!",
+            data: newExpense
+        });
+    }); 
+});
 
 router.put('/:id', validateExpense, function(req, res) {
     const id = parseInt(req.params.id);
     const { category, amount, date } = req.body;
+    const sql = `UPDATE expenses
+                 SET category = ?, amount = ?, date = ?
+                 WHERE id = ?`;
+    const params = [category, amount, date, id];
 
-    const expenseIndex = expenses.findIndex(e => e.id === id);
+    db.run(sql, params, function(err) {
+        if (err) {
+            return next(err);
+        }
 
-    if (expenseIndex === -1) {
-        return res.status(404).json({ error: "No expense found to edit" });
-    }
+        if (this.changes === 0) {
+            return res.status(404).json({ 
+                error: "No expense with this ID found." 
+            });
+        }
 
-    expenses[expenseIndex] = {
-        ...expenses[expenseIndex],
-        category: category || expenses[expenseIndex].category,
-        amount: amount || expenses[expenseIndex].amount,
-        date: date || expenses[expenseIndex].date
-    };
-
-    res.json({ message: "Expense updated", data: expenses[expenseIndex] });
+        res.json({
+            message: "The expense has been updated!",
+            data: { id, category, amount, date }
+        });
+    });
 });
 
-router.delete('/:id', (req, res) => {
+router.delete('/:id', function(req, res){
     const id = parseInt(req.params.id);
-    const index = expenses.findIndex(e => e.id === id);
+    const sql = `DELETE FROM expenses WHERE id = ?`
 
-    if (index === -1) {
-        return res.status(404).json({ error: "There is nothing to delete, no ID" });
-    }
+    db.run(sql, [id], function(err) {
+        if(err) {
+            return next(err);
+        }
 
-    expenses.splice(index, 1);
-    res.json({ message: "Expense deleted successfully" });
+        if(this.changes === 0) {
+            return res.status(404).json({
+                error: "There is nothing to delete, no record found for this ID."
+            });
+        }
+
+         res.status(200).json({
+            message: "Expense deleted successfully!",
+            deletedCount: this.changes
+        });
+    });
 });
 
-router.get('/filter/:category', (req, res) => {
-    const category = req.params.category.toLowerCase();
-    const filtered = expenses.filter(e => e.category.toLowerCase() === category);
-    res.json(filtered);
+router.get('/filter/:category', function(req, res){
+    const category = req.params.category;
+    const sql = "SELECT * FROM expenses WHERE category LIKE ?"
+
+    db.all(sql, [category], function(err, rows) {
+        if(err){
+            return next(err);
+        }
+
+        res.json(rows);
+    });
 });
 
 module.exports = router;

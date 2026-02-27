@@ -20,5 +20,5 @@ app.use('/expenses', indexExpenses);
 app.use(myErrorHandler);
 
 app.listen(PORT, () => {
-    console.log(`Budget API works on http://locahlost:${PORT}`);
+    console.log(`Budget API works on http://localhost:${PORT}`);
 })
